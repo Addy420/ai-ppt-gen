@@ -12,8 +12,9 @@ interface PresentationViewProps {
   presentation: {
     result: string;
     source: string;
+    slide: string;
   };
-  title:string
+  title: string
   onEdit?: () => void;
   onCreateNew?: () => void;
   onSave?: (presentation: Presentation) => void;
@@ -33,7 +34,8 @@ const PresentationView: React.FC<PresentationViewProps> = ({
     id: uuidv4(),
     createdAt: new Date().toISOString(),
     title: title,  // Default title
-    slides: []
+    slides: [],
+    result: presentation.result,
   });
 
   // Define the default title logic
@@ -43,25 +45,31 @@ const PresentationView: React.FC<PresentationViewProps> = ({
 
   // Process the raw text into slides
   useEffect(() => {
-    const slides = presentation.result
-      .split('\n\n')
-      .filter(Boolean)
-      .map((content, index) => ({
-        title: `Slide ${index + 1}`,
-        content,
+    const slideRegex = /\*\*Slide \d+: (.*?)\*\*\n\n\*\*Content:\*\*([\s\S]*?)(?=(\*\*Slide \d+:)|$)/g;
+
+    const slides: SlideContent[] = [];
+    let match;
+
+    while ((match = slideRegex.exec(presentation.result)) !== null) {
+      const [, rawTitle, rawContent] = match;
+
+      slides.push({
+        title: rawTitle.trim(),
+        content: rawContent.trim(),
         imageUrl: "",
         style: {}
-      }));
+      });
+    }
 
-    // Set the processed presentation with the default title
     setProcessedPresentation({
       id: uuidv4(),
       createdAt: new Date().toISOString(),
-      title: title, // Try to use passed-in title first
-      slides
+      title: defaultTitle,
+      slides,
+      result: presentation.result
     });
-    
   }, [presentation.result, presentation.source]);
+
 
   const currentSlide = processedPresentation.slides[currentSlideIndex];
 

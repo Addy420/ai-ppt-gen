@@ -1,5 +1,5 @@
 import { toast } from "@/components/ui/use-toast";
-
+import { v4 as uuidv4 } from 'uuid';
 export interface PresentationRequest {
   title: string;
   content: string;
@@ -25,6 +25,7 @@ export interface Presentation {
   title: string;
   createdAt: string;
   slides: SlideContent[];
+  result: string
 }
 
 
@@ -33,17 +34,16 @@ const API_BASE_URL = "http://localhost:5000"; // Replace with your backend URL
 // Generate presentation using backend
 export const generatePresentation = async (request: PresentationRequest): Promise<Presentation> => {
   try {
-    
-    const res = await fetch(`${API_BASE_URL}/generate`, {
+    const res = await fetch(`${API_BASE_URL}/api/presentation`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${request.apiKey}`,
       },
       body: JSON.stringify({
         title: request.title,
         content: request.content,
         slideBySlide: request.slideBySlide ?? false,
+        apiKey: request.apiKey,
       }),
     });
 
@@ -58,8 +58,40 @@ export const generatePresentation = async (request: PresentationRequest): Promis
       throw new Error("Failed to generate presentation");
     }
 
-    const data = await res.json();
-    return data as Presentation;
+    const data: { result: string; source: string; title:string } = await res.json();
+
+    // --- Transform the backend result into the Presentation interface ---
+    const slides: SlideContent[] = [];
+    const lines = data.result.split('\n\n').filter(line => line.trim() !== '');
+    let currentSlide: SlideContent = { title: '', content: '' };
+
+    for (const line of lines) {
+      if (line.startsWith('Slide ')) {
+        if (currentSlide.title) {
+          slides.push({ ...currentSlide });
+          currentSlide = { title: '', content: '' };
+        }
+        const parts = line.split(':');
+        currentSlide.title = parts[0].trim();
+        currentSlide.content = parts.slice(1).join(':').trim();
+      } else if (currentSlide.title) {
+        currentSlide.content += '\n' + line.trim();
+      }
+    }
+    if (currentSlide.title) {
+      slides.push(currentSlide);
+    }
+    console.log(data.result);
+    
+    const presentation: Presentation = {
+      id: uuidv4(),
+      title: request.title,
+      createdAt: new Date().toISOString(),
+      slides: slides,
+      result: data.result,
+    };
+
+    return presentation;
 
   } catch (error: any) {
     console.error("Frontend Error:", error);

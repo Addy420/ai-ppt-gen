@@ -115,6 +115,7 @@ const StartCreating = () => {
       addPresentation(generatedPresentation);
       console.log(currentPresentation.title);
       
+      
 
       setStep(2);
       toast({
