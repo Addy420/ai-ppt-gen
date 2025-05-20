@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import PptxGenJS from "pptxgenjs";
 
 interface PresentationViewProps {
   presentation: {
@@ -95,6 +96,60 @@ const PresentationView: React.FC<PresentationViewProps> = ({
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
   };
+// NEW CODE BY KRUPADESH
+  const downloadPptx = () => {
+  const pptx = new PptxGenJS();
+
+  processedPresentation.slides.forEach((slide, index) => {
+    const s = pptx.addSlide();
+
+    // Set a clean background if no image
+    if (slide.imageUrl) {
+      s.background = { data: slide.imageUrl };
+    } else {
+      s.background = { fill: 'F7F6F3' }; // Light off-white
+    }
+
+    // Add slide title
+    s.addText(slide.title, {
+      x: 0.5,
+      y: 0.1  ,
+      w: 9,
+      h: 1,
+      fontSize: 28,
+      bold: true,
+      color: '2E2E2E',
+      align: 'center',
+    });
+
+    // Format content with wrapped text box
+    s.addText(slide.content, {
+      x: 0.7,
+      y: 1.5,
+      w: 8.6,
+      h: 4.5,
+      fontSize: 16,
+      color: '3C3C3C',
+      align: 'left',
+      lineSpacingMultiple: 1.2,
+      autoFit: true,
+    });
+
+    // Optional: Add slide number
+    s.addText(`Slide ${index + 1}`, {
+      x: 9,
+      y: 6.8,
+      fontSize: 10,
+      color: '888888',
+      align: 'right',
+    });
+  });
+
+  pptx.writeFile({ fileName: `${processedPresentation.title}.pptx` });
+};
+
+
+  
 
   const handleEditToggle = () => {
     if (isEditing) {
@@ -141,20 +196,11 @@ const PresentationView: React.FC<PresentationViewProps> = ({
 
     return inlineStyle;
   };
-
-  useEffect(() => {
-    // Whenever processedPresentation.slides updates, check if loading should end
-    if (processedPresentation.slides || processedPresentation.slides.length > 0) {
-      setIsLoading(false);
-    }
-  }, [processedPresentation.slides]);
-
-  if (isLoading) {
-    return <div>Loading presentation...</div>;
-  }if (!processedPresentation.slides.length) {
-    return <div>Loading presentation...</div>;
-  }
-
+  
+  
+ if (!processedPresentation.slides || processedPresentation.slides.length === 0) {
+  return <div>Loading presentation...</div>;
+}
   return (
     <Card className="shadow-lg border-gray-200">
       <CardHeader>
@@ -281,6 +327,7 @@ const PresentationView: React.FC<PresentationViewProps> = ({
             </>
           )}
         </Button>
+        <Button onClick={downloadPptx}>Download .PPTX</Button>
 
         <Button
           className="flex-1"
