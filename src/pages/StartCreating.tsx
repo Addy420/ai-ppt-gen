@@ -113,7 +113,9 @@ const StartCreating = () => {
       // Call the backend to generate the presentation
       const generatedPresentation = await generatePresentation(request);
       addPresentation(generatedPresentation);
-      console.log(currentPresentation.title);
+      console.log(generatedPresentation.title);
+      console.log("Generated presentation:", generatedPresentation);
+
       
       
 

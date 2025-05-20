@@ -34,7 +34,7 @@ app.post('/generate', async (req, res) => {
     res.status(500).json({ error: "Failed to generate content" });
   }
 });
-// IGhkN0PbkxD2s3J2heaZbpg2fi8O3teH-5I3t6cT
+// The new open-ai key: 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
 // ✅ NEW route your frontend expects
 app.post('/api/presentation', async (req, res) => {
   const { title, content, slideBySlide, apiKey } = req.body;

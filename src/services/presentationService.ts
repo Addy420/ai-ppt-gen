@@ -61,37 +61,31 @@ export const generatePresentation = async (request: PresentationRequest): Promis
     const data: { result: string; source: string; title:string } = await res.json();
 
     // --- Transform the backend result into the Presentation interface ---
-    const slides: SlideContent[] = [];
-    const lines = data.result.split('\n\n').filter(line => line.trim() !== '');
-    let currentSlide: SlideContent = { title: '', content: '' };
+const parseSlidesFromResult = (result: string): SlideContent[] => {
+  const slideBlocks = result.split(/\*\*Slide \d+: (.*?)\*\*/g).filter(Boolean);
+  const slides: SlideContent[] = [];
 
-    for (const line of lines) {
-      if (line.startsWith('Slide ')) {
-        if (currentSlide.title) {
-          slides.push({ ...currentSlide });
-          currentSlide = { title: '', content: '' };
-        }
-        const parts = line.split(':');
-        currentSlide.title = parts[0].trim();
-        currentSlide.content = parts.slice(1).join(':').trim();
-      } else if (currentSlide.title) {
-        currentSlide.content += '\n' + line.trim();
-      }
-    }
-    if (currentSlide.title) {
-      slides.push(currentSlide);
-    }
-    console.log(data.result);
-    
-    const presentation: Presentation = {
-      id: uuidv4(),
-      title: request.title,
-      createdAt: new Date().toISOString(),
-      slides: slides,
-      result: data.result,
-    };
+  for (let i = 0; i < slideBlocks.length; i += 2) {
+    const title = slideBlocks[i].trim();
+    const content = slideBlocks[i + 1]?.trim() || '';
+    slides.push({ title, content });
+  }
 
-    return presentation;
+  return slides;
+};
+
+const slides = parseSlidesFromResult(data.result);
+
+const presentation: Presentation = {
+  id: uuidv4(),
+  title: request.title,
+  createdAt: new Date().toISOString(),
+  slides: slides,
+  result: data.result,
+};
+
+return presentation;
+
 
   } catch (error: any) {
     console.error("Frontend Error:", error);

@@ -29,6 +29,7 @@ const PresentationView: React.FC<PresentationViewProps> = ({
   onSave
 }) => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [ isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [processedPresentation, setProcessedPresentation] = useState<Presentation>({
     id: uuidv4(),
@@ -141,7 +142,16 @@ const PresentationView: React.FC<PresentationViewProps> = ({
     return inlineStyle;
   };
 
-  if (!processedPresentation.slides.length) {
+  useEffect(() => {
+    // Whenever processedPresentation.slides updates, check if loading should end
+    if (processedPresentation.slides || processedPresentation.slides.length > 0) {
+      setIsLoading(false);
+    }
+  }, [processedPresentation.slides]);
+
+  if (isLoading) {
+    return <div>Loading presentation...</div>;
+  }if (!processedPresentation.slides.length) {
     return <div>Loading presentation...</div>;
   }
 
